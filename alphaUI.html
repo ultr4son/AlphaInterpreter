@@ -1,0 +1,113 @@
+<head>
+	<script src = "jquery-3.1.0.min.js" type = "text/javascript"></script>
+	<script src = "AddNavBar.js" type = "text/javascript"></script>
+	<script src = "alphaInterpreter.js" type = "text/javascript"></script>
+	<script>
+		var inputPointer = 0;
+		var atBreakpoint = false;
+		var error = false;
+		var interpreter;
+		var codeEndId;
+		function output(outputCode)
+		{
+			alphaCodeOutput.value += outputCode			
+		}
+		function errOutput(output)
+		{
+			alphaCodeOutput.style.color = "red";
+			alphaCodeOutput.value += output;
+			error = true;
+		}
+		function input()
+		{
+			if(alphaCodeInput.value.length <= 0)
+			{
+				return 0;
+			}
+			if(alphaCodeInput.value.length == 1)
+			{
+				var codeInput = alphaCodeInput.value.charCodeAt(0);
+				alphaCodeInput.value = "";
+				return codeInput;
+			}
+			var codeInput = alphaCodeInput.value.charCodeAt(0);
+			alphaCodeInput.value = alphaCodeInput.value.substring(1, alphaCodeInput.value.length);
+			
+			return codeInput
+		}
+		//Fired by the interpreter or a button event.
+		function breakpoint()
+		{
+			atBreakpoint = true;
+			breakpointInstructionNumber.innerHTML = "Broke at instruction " + interpreter.p + " accumulator is " + interpreter.accumulator;
+
+		}
+		function stepInterpreter()
+		{
+			if(interpreter != undefined)
+			{
+				if(!interpreter.atEnd())
+				{
+					interpreter.executeStep();
+				}
+			}
+		}
+		function continueInterpreter()
+		{
+			atBreakpoint = false;
+		}
+		function runAlpha()
+		{
+			atBreakpoint = false;
+			error = false;
+			alphaCodeOutput.style.color = "black";
+			inputPointer = 0;
+			alphaCodeOutput.value = "";
+			
+			var code = alphaCodeEditor.value;
+			
+			interpreter = new AlphaInterpreter(code);
+			interpreter.inputFunction = input;
+			interpreter.outputFunction = output;
+			interpreter.errorOutputFunction = errOutput;
+			interpreter.breakpointFunction = breakpoint;
+			interpreter.init();
+			codeEndId = setInterval(runStepEvent, 20); //prevent code execution from freezing UI elements.
+		}
+		function runStepEvent()
+		{
+			if(error || interpreter.atEnd()) //error should be checked first.
+			{
+				clearInterval(codeEndId);
+				return
+			}
+			if(!atBreakpoint)
+			{
+				stepInterpreter();
+			}
+	
+		}
+	</script>
+</head>
+<body>
+	<div id = "navbar"></div>
+	<table> <!-- screw your css -->
+		<tr>
+			<td><p>Editor:</p></td>
+			<td><p>Input:</p></td>
+			<td><p>Output:</p></td>
+		</tr>
+		<tr>
+			<td><textarea id = "alphaCodeEditor"></textarea></td>
+			<td><textarea id = "alphaCodeInput"></textarea></td>
+			<td><textarea id = "alphaCodeOutput"></textarea></td>
+		</tr>
+		
+	</table>
+	<button onclick = "breakpoint()">Pause!</button>
+	<button onclick = "continueInterpreter()">Continue!</button>
+	<button onclick = "stepInterpreter()">Step!</button>
+	<p id = "breakpointInstructionNumber"></p>
+	<button onclick = "runAlpha()">Run!</button>
+
+</body>
